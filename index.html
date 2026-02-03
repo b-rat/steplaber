@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STEP Labeler</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Top Bar -->
+        <header id="topbar">
+            <div class="topbar-left">
+                <h1>STEP Labeler</h1>
+                <span id="filename" class="filename">No file loaded</span>
+            </div>
+            <div class="topbar-right">
+                <button id="btn-import" class="btn btn-primary">Import STEP</button>
+                <button id="btn-export" class="btn btn-accent" disabled>Export Named STEP</button>
+                <input type="file" id="file-input" accept=".step,.stp" hidden>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div id="main">
+            <!-- 3D Viewer -->
+            <div id="viewer-panel">
+                <canvas id="viewer-canvas"></canvas>
+                <div id="viewer-overlay">
+                    <div id="hover-info" class="hidden"></div>
+                </div>
+                <div id="viewer-toolbar">
+                    <button id="btn-reset-view" class="btn-icon" title="Reset view">⟳</button>
+                    <button id="btn-zoom-fit" class="btn-icon" title="Fit all">⊞</button>
+                    <div class="separator"></div>
+                    <button id="btn-select-mode" class="btn-icon active" title="Select faces">◎</button>
+                    <button id="btn-multi-select" class="btn-icon" title="Multi-select (Shift)">⊕</button>
+                    <div class="separator"></div>
+                    <button id="btn-xray" class="btn-icon" title="X-ray mode">◇</button>
+                    <button id="btn-hide-selected" class="btn-icon" title="Hide selected faces">ᐩ</button>
+                    <button id="btn-unhide-all" class="btn-icon" title="Unhide all">◻</button>
+                </div>
+                <div id="drop-overlay" class="hidden">
+                    <div class="drop-message">Drop STEP file here</div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Feature Manager -->
+            <div id="side-panel">
+                <!-- Face List Tab / Feature Tab toggle -->
+                <div id="panel-tabs">
+                    <button class="tab active" data-tab="features">Features</button>
+                    <button class="tab" data-tab="facelist">Face List</button>
+                </div>
+
+                <!-- Features Panel -->
+                <div id="features-panel" class="panel-content active">
+                    <div id="selection-info" class="section">
+                        <h3>Selection</h3>
+                        <div id="selected-faces-count">No faces selected</div>
+                        <button id="btn-create-feature" class="btn btn-small" disabled>
+                            Create Feature from Selection
+                        </button>
+                    </div>
+
+                    <div id="features-list" class="section">
+                        <h3>Features</h3>
+                        <div id="features-container">
+                            <div class="empty-state">
+                                Import a STEP file and select faces to create features.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Face List Panel -->
+                <div id="facelist-panel" class="panel-content">
+                    <div class="section">
+                        <div id="face-filters">
+                            <input type="text" id="face-search" placeholder="Filter faces...">
+                            <select id="face-type-filter">
+                                <option value="all">All types</option>
+                                <option value="planar">Planar</option>
+                                <option value="cylindrical">Cylindrical</option>
+                                <option value="conical">Conical</option>
+                                <option value="spherical">Spherical</option>
+                                <option value="toroidal">Toroidal</option>
+                                <option value="bspline">B-Spline</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div id="face-list-container">
+                            <div class="empty-state">No STEP file loaded.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Name Dialog -->
+    <div id="name-dialog" class="dialog hidden">
+        <div class="dialog-content">
+            <h3>Name this Feature</h3>
+            <p id="dialog-face-count"></p>
+            <input type="text" id="feature-name-input" placeholder="e.g. mounting_boss">
+            <div class="dialog-hint">
+                Use snake_case. Sub-face names will be auto-generated from geometry type.
+            </div>
+            <div class="dialog-buttons">
+                <button id="btn-dialog-cancel" class="btn btn-small">Cancel</button>
+                <button id="btn-dialog-confirm" class="btn btn-small btn-accent">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="/static/js/viewer.js"></script>
+    <script src="/static/js/features.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
