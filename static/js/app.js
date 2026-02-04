@@ -34,6 +34,7 @@
     const btnDialogConfirm = document.getElementById('btn-dialog-confirm');
     const viewerPanel = document.getElementById('viewer-panel');
     const dropOverlay = document.getElementById('drop-overlay');
+    const btnClear = document.getElementById('btn-clear');
 
     // Toolbar buttons
     const btnResetView = document.getElementById('btn-reset-view');
@@ -61,6 +62,9 @@
         // File import
         btnImport.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', onFileSelected);
+
+        // Clear file
+        btnClear.addEventListener('click', clearFile);
 
         // Export
         btnExport.addEventListener('click', onExport);
@@ -170,6 +174,26 @@
 
         // Update UI
         btnExport.disabled = false;
+        btnClear.hidden = false;
+        updateSelectionInfo();
+        updateFeaturesList();
+        updateFaceList();
+    }
+
+    function clearFile() {
+        isLoaded = false;
+        facesMetadata = [];
+
+        // Clear viewer
+        viewer.clearMesh();
+
+        // Clear features
+        featureManager.clear();
+
+        // Reset UI
+        filenameEl.textContent = 'No file loaded';
+        btnExport.disabled = true;
+        btnClear.hidden = true;
         updateSelectionInfo();
         updateFeaturesList();
         updateFaceList();

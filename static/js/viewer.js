@@ -201,6 +201,30 @@ class StepViewer {
         this.xrayMode = false;
     }
 
+    clearMesh() {
+        /**
+         * Remove the current mesh and reset viewer state.
+         */
+        if (this.mesh) {
+            this.scene.remove(this.mesh);
+            this.mesh.geometry.dispose();
+            this.mesh.material.dispose();
+            this.mesh = null;
+        }
+        if (this.wireframe) {
+            this.wireframe = null;
+        }
+
+        this.faceIds = [];
+        this.faceColors = null;
+        this.numFaces = 0;
+        this.facesMetadata = [];
+        this.selectedFaces.clear();
+        this.hiddenFaces.clear();
+        this.featureColors = {};
+        this.hoveredFace = -1;
+    }
+
     _resetColors(colorArray, indices, faceIds) {
         /**
          * Assign base color to each face.
