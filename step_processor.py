@@ -245,9 +245,19 @@ class StepProcessor:
             "axis_direction": axis_direction,
             "axis_point": axis_point,
             "arc_angle": arc_angle,
+            "step_name": self._get_step_name(face_id),
             "name": None,
             "feature": None,
         }
+
+    def _get_step_name(self, face_id):
+        """Get the existing name from the STEP file for a face, if any."""
+        if face_id < len(self.advanced_face_lines):
+            name = self.advanced_face_lines[face_id]["name"]
+            # Return None if name is empty or 'NONE' (common default)
+            if name and name.upper() != "NONE":
+                return name
+        return None
 
     def tessellate(self, linear_deflection=0.1, angular_deflection=0.5):
         """

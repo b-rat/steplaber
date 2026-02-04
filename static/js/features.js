@@ -172,4 +172,51 @@ class FeatureManager {
         this.faceToFeature = {};
         this.colorIndex = 0;
     }
+
+    importFromStepNames(facesMetadata) {
+        /**
+         * Import features from existing STEP names in face metadata.
+         * Parses names in "feature.sub_name" or "feature" format.
+         */
+        // Group faces by feature name
+        const featureGroups = {};  // feature_name -> [{face_id, sub_name}]
+
+        for (const face of facesMetadata) {
+            if (!face.step_name) continue;
+
+            let featureName, subName;
+            const dotIndex = face.step_name.indexOf('.');
+            if (dotIndex !== -1) {
+                featureName = face.step_name.substring(0, dotIndex);
+                subName = face.step_name.substring(dotIndex + 1);
+            } else {
+                featureName = face.step_name;
+                subName = null;
+            }
+
+            if (!featureGroups[featureName]) {
+                featureGroups[featureName] = [];
+            }
+            featureGroups[featureName].push({
+                face_id: face.id,
+                sub_name: subName
+            });
+        }
+
+        // Create features from groups
+        for (const [name, faces] of Object.entries(featureGroups)) {
+            const color = this._nextColor();
+            this.features[name] = { color, faces };
+
+            for (const member of faces) {
+                this.faceToFeature[member.face_id] = name;
+            }
+        }
+
+        if (Object.keys(featureGroups).length > 0 && this.onFeaturesChanged) {
+            this.onFeaturesChanged();
+        }
+
+        return Object.keys(featureGroups).length;
+    }
 }

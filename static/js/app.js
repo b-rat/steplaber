@@ -27,6 +27,7 @@
     const featuresContainer = document.getElementById('features-container');
     const faceListContainer = document.getElementById('face-list-container');
     const faceTypeFilter = document.getElementById('face-type-filter');
+    const faceLabelFilter = document.getElementById('face-label-filter');
     const areaMinInput = document.getElementById('area-min');
     const areaMaxInput = document.getElementById('area-max');
     const nameDialog = document.getElementById('name-dialog');
@@ -107,6 +108,7 @@
 
         // Face list filters
         faceTypeFilter.addEventListener('change', updateFaceList);
+        faceLabelFilter.addEventListener('change', updateFaceList);
         areaMinInput.addEventListener('input', updateFaceList);
         areaMaxInput.addEventListener('input', updateFaceList);
 
@@ -179,8 +181,18 @@
         // Load mesh into viewer with face metadata for coloring
         viewer.loadMesh(data.mesh, data.faces);
 
-        // Clear features
+        // Clear features then import any existing names from STEP
         featureManager.clear();
+        const importedCount = featureManager.importFromStepNames(facesMetadata);
+
+        // Apply feature colors to viewer for imported features
+        if (importedCount > 0) {
+            for (const [name, feature] of Object.entries(featureManager.features)) {
+                for (const member of feature.faces) {
+                    viewer.setFeatureColor(member.face_id, feature.color);
+                }
+            }
+        }
 
         // Update UI
         btnExport.disabled = false;
@@ -601,11 +613,14 @@
         }
 
         const typeFilter = faceTypeFilter.value;
+        const labelFilter = faceLabelFilter.value;
         const areaMin = areaMinInput.value ? parseFloat(areaMinInput.value) : null;
         const areaMax = areaMaxInput.value ? parseFloat(areaMaxInput.value) : null;
 
         let filtered = facesMetadata.filter(face => {
             if (typeFilter !== 'all' && face.surface_type !== typeFilter) return false;
+            if (labelFilter === 'labeled' && !featureManager.getFeatureForFace(face.id)) return false;
+            if (labelFilter === 'unlabeled' && featureManager.getFeatureForFace(face.id)) return false;
             if (areaMin !== null && face.area < areaMin) return false;
             if (areaMax !== null && face.area > areaMax) return false;
             return true;
@@ -618,6 +633,11 @@
             const isSelected = viewer.selectedFaces.has(face.id);
             const featureName = featureManager.getFeatureForFace(face.id);
 
+            // Show feature name, or imported STEP name if no feature assigned
+            const displayTag = featureName
+                ? `<span class="face-feature-tag">${featureName}</span>`
+                : (face.step_name ? `<span class="face-step-name">${face.step_name}</span>` : '');
+
             return `
                 <div class="face-list-item ${isSelected ? 'selected' : ''}"
                      data-face-id="${face.id}"
@@ -627,7 +647,7 @@
                     <div class="face-list-left">
                         <span class="face-id">#${face.id}</span>
                         <span class="face-type-badge ${face.surface_type}">${face.surface_type}</span>
-                        ${featureName ? `<span class="face-feature-tag">${featureName}</span>` : ''}
+                        ${displayTag}
                     </div>
                     <span class="face-area">${face.area.toFixed(2)}</span>
                 </div>`;
