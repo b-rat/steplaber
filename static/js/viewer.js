@@ -84,6 +84,35 @@ class StepViewer {
         const grid = new THREE.GridHelper(100, 20, 0x2a2a30, 0x1e1e24);
         this.scene.add(grid);
 
+        // Origin axes helper (R=X, G=Y, B=Z)
+        const axisLength = 20;
+        const axes = new THREE.AxesHelper(axisLength);
+        this.scene.add(axes);
+
+        // Axis labels
+        const makeLabel = (text, color, position) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = color;
+            ctx.font = 'bold 48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 32, 32);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(material);
+            sprite.position.copy(position);
+            sprite.scale.set(5, 5, 1);
+            return sprite;
+        };
+
+        this.scene.add(makeLabel('X', '#ff4444', new THREE.Vector3(axisLength + 2, 0, 0)));
+        this.scene.add(makeLabel('Y', '#44ff44', new THREE.Vector3(0, axisLength + 2, 0)));
+        this.scene.add(makeLabel('Z', '#4444ff', new THREE.Vector3(0, 0, axisLength + 2)));
+
         // Raycaster
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
