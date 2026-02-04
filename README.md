@@ -77,6 +77,21 @@ The viewer displays origin axes (X=red, Y=green, Z=blue) and CAD topological edg
 - Click **Export Named STEP** to download the STEP file with embedded face names
 - Names follow the convention: `feature_name.sub_face` (e.g., `mounting_boss.cylindrical`)
 
+## Working with Assemblies
+
+### Single Parts and Simple Assemblies
+The tool works best with single-part STEP files. Assemblies with multiple unique parts (e.g., a block and a pin) also work correctly.
+
+### Assemblies with Instanced Parts
+When an assembly contains multiple instances of the same part (e.g., two identical pins), the STEP file contains one set of face definitions that all instances reference. OCC expands these into separate faces, creating more faces than STEP entities.
+
+**Recommended workflow:** Select the same face on ALL instances. For example, if you have two pins and want to label the top face, select both pin tops, then create the feature. The export will:
+- Label faces with valid entity indices
+- Silently skip faces with out-of-range indices (no errors)
+- At least one face will map correctly to the prototype's `ADVANCED_FACE` entity
+
+This is safe because the export gracefully handles unmapped faces—they're simply skipped without causing errors or file corruption.
+
 ## STEP Naming Convention
 
 Faces are named using dot-separated feature/sub-face notation:
