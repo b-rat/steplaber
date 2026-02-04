@@ -11,6 +11,8 @@ from pathlib import Path
 import cadquery as cq
 from OCP.TopExp import TopExp_Explorer
 from OCP.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX
+from OCP.GCPnts import GCPnts_TangentialDeflection
+from OCP.BRepAdaptor import BRepAdaptor_Curve
 from OCP.BRep import BRep_Tool
 from OCP.BRepMesh import BRepMesh_IncrementalMesh
 from OCP.TopLoc import TopLoc_Location
@@ -257,12 +259,37 @@ class StepProcessor:
 
             vertex_offset += num_verts
 
+        # Extract topological edges
+        edge_vertices = []
+        edge_explorer = TopExp_Explorer(self.shape.wrapped, TopAbs_EDGE)
+        while edge_explorer.More():
+            edge = TopoDS.Edge_s(edge_explorer.Current())
+            try:
+                curve = BRepAdaptor_Curve(edge)
+                # Discretize the edge curve
+                discretizer = GCPnts_TangentialDeflection(
+                    curve, angular_deflection, linear_deflection
+                )
+                num_points = discretizer.NbPoints()
+                if num_points >= 2:
+                    for i in range(1, num_points):
+                        p1 = discretizer.Value(i)
+                        p2 = discretizer.Value(i + 1)
+                        edge_vertices.extend([
+                            p1.X(), p1.Y(), p1.Z(),
+                            p2.X(), p2.Y(), p2.Z()
+                        ])
+            except Exception:
+                pass  # Skip edges that can't be discretized
+            edge_explorer.Next()
+
         return {
             "vertices": all_vertices,
             "normals": all_normals,
             "triangles": all_triangles,
             "face_ids": all_face_ids,
             "num_faces": len(self.faces),
+            "edges": edge_vertices,
         }
 
     def get_faces_metadata(self):

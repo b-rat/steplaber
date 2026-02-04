@@ -146,15 +146,21 @@ class StepViewer {
         this.mesh = new THREE.Mesh(geometry, material);
         this.scene.add(this.mesh);
 
-        // Edge outline (shows only sharp edges, not tessellation)
-        const edgeGeo = new THREE.EdgesGeometry(geometry, 30); // 30 degree threshold
-        const edgeMat = new THREE.LineBasicMaterial({
-            color: 0x000000,
-            linewidth: 1,
-        });
-        this.wireframe = new THREE.LineSegments(edgeGeo, edgeMat);
-        this.wireframe.visible = this.wireframeVisible;
-        this.mesh.add(this.wireframe);
+        // Edge outline from CAD topology (if provided)
+        if (data.edges && data.edges.length > 0) {
+            const edgeGeo = new THREE.BufferGeometry();
+            const edgeVerts = new Float32Array(data.edges);
+            edgeGeo.setAttribute('position', new THREE.BufferAttribute(edgeVerts, 3));
+            const edgeMat = new THREE.LineBasicMaterial({
+                color: 0x000000,
+                linewidth: 1,
+            });
+            this.wireframe = new THREE.LineSegments(edgeGeo, edgeMat);
+            this.wireframe.visible = this.wireframeVisible;
+            this.mesh.add(this.wireframe);
+        } else {
+            this.wireframe = null;
+        }
 
         // Fit camera
         this._fitCamera();
