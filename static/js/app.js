@@ -285,7 +285,7 @@
             const face = facesMetadata[selectedIds[0]];
             if (face && face.surface_type === 'cylindrical' && face.radius !== null) {
                 const arcAngle = face.arc_angle || 360;
-                const isFullCylinder = arcAngle >= 150;
+                const isFullCylinder = arcAngle >= 180;
 
                 measurementDisplay.classList.remove('hidden');
                 measurementDisplay.classList.add('has-value');
@@ -439,11 +439,11 @@
             }
         }
 
-        // Show diameter or radius based on arc angle (>=150° = diameter, <150° = radius)
+        // Show diameter or radius based on arc angle (>=180° = diameter, <180° = radius)
         function cylSizeStr(face) {
             if (!face.radius) return '?';
             const arc = face.arc_angle || 360;
-            if (arc >= 150) {
+            if (arc >= 180) {
                 return `⌀${(face.radius * 2).toFixed(4)}`;
             } else {
                 return `R${face.radius.toFixed(4)}`;
