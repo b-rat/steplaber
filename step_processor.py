@@ -56,6 +56,7 @@ class StepProcessor:
         self.step_content = None
         self.advanced_face_lines = []  # (line_number, original_name) tuples
         self.length_unit = "units"  # Default if not detected
+        self.length_scale = 1.0  # Scale factor from OCC internal units (meters) to display unit
 
     def load_step(self, filepath):
         """Load a STEP file and extract topology."""
@@ -93,6 +94,7 @@ class StepProcessor:
             "num_faces": len(self.faces),
             "num_step_entities": len(self.advanced_face_lines),
             "length_unit": self.length_unit,
+            "length_scale": self.length_scale,
         }
 
     def _parse_step_entities(self):
@@ -114,29 +116,28 @@ class StepProcessor:
             })
 
     def _parse_length_unit(self):
-        """Extract length unit from STEP file (SI_UNIT or CONVERSION_BASED_UNIT)."""
+        """Extract length unit from STEP file (SI_UNIT or CONVERSION_BASED_UNIT).
+
+        Also sets length_scale to convert from OCC internal units (mm) to display unit.
+        OCC normalizes STEP geometry to millimeters regardless of the file's original units.
+        """
         content = self.step_content.upper()
 
-        # Look for SI_UNIT with length - e.g., SI_UNIT(.MILLI.,.METRE.)
-        si_match = re.search(r"SI_UNIT\s*\(\s*\.(\w+)\.\s*,\s*\.METRE\.\s*\)", content)
-        if si_match:
-            prefix = si_match.group(1)
-            prefix_map = {
-                "MILLI": "mm",
-                "CENTI": "cm",
-                "DECI": "dm",
-                "KILO": "km",
-                "$": "m",  # No prefix
-            }
-            self.length_unit = prefix_map.get(prefix, "m")
-            return
+        # Scale factors: OCC uses millimeters internally, so these convert mm -> display unit
+        scale_map = {
+            "mm": 1.0,
+            "cm": 0.1,
+            "dm": 0.01,
+            "m": 0.001,
+            "km": 0.000001,
+            "in": 1.0 / 25.4,  # mm to inches
+            "ft": 1.0 / 304.8,  # mm to feet
+            "yd": 1.0 / 914.4,  # mm to yards
+            "mi": 1.0 / 1609344.0,  # mm to miles
+        }
 
-        # Check for bare SI_UNIT($,.METRE.) - meters with no prefix
-        if re.search(r"SI_UNIT\s*\(\s*\$\s*,\s*\.METRE\.\s*\)", content):
-            self.length_unit = "m"
-            return
-
-        # Look for CONVERSION_BASED_UNIT - e.g., CONVERSION_BASED_UNIT('INCH',...)
+        # Check for CONVERSION_BASED_UNIT FIRST - e.g., CONVERSION_BASED_UNIT('INCH',...)
+        # This takes priority because it indicates the user's intended display unit
         conv_match = re.search(r"CONVERSION_BASED_UNIT\s*\(\s*'(\w+)'", content)
         if conv_match:
             unit_name = conv_match.group(1)
@@ -147,10 +148,32 @@ class StepProcessor:
                 "MILE": "mi",
             }
             self.length_unit = unit_map.get(unit_name, unit_name.lower())
+            self.length_scale = scale_map.get(self.length_unit, 1.0)
             return
 
-        # Default fallback
-        self.length_unit = "units"
+        # Look for SI_UNIT with length prefix - e.g., SI_UNIT(.MILLI.,.METRE.)
+        si_match = re.search(r"SI_UNIT\s*\(\s*\.(\w+)\.\s*,\s*\.METRE\.\s*\)", content)
+        if si_match:
+            prefix = si_match.group(1)
+            prefix_map = {
+                "MILLI": "mm",
+                "CENTI": "cm",
+                "DECI": "dm",
+                "KILO": "km",
+            }
+            self.length_unit = prefix_map.get(prefix, "m")
+            self.length_scale = scale_map.get(self.length_unit, 1.0)
+            return
+
+        # Check for bare SI_UNIT($,.METRE.) - meters with no prefix
+        if re.search(r"SI_UNIT\s*\(\s*\$\s*,\s*\.METRE\.\s*\)", content):
+            self.length_unit = "m"
+            self.length_scale = 0.001
+            return
+
+        # Default fallback - assume mm
+        self.length_unit = "mm"
+        self.length_scale = 1.0
 
     def _extract_face_metadata(self, face, face_id):
         """Extract geometric metadata from a TopoDS_Face."""

@@ -13,6 +13,7 @@
     let isLoaded = false;
     let multiSelectMode = false;
     let lengthUnit = 'units';
+    let lengthScale = 1.0;  // Scale factor from OCC meters to display unit
 
     // --- DOM refs ---
     const canvas = document.getElementById('viewer-canvas');
@@ -173,6 +174,7 @@
         filenameEl.textContent = data.filename;
         facesMetadata = data.faces;
         lengthUnit = data.info?.length_unit || 'units';
+        lengthScale = data.info?.length_scale || 1.0;
 
         // Load mesh into viewer with face metadata for coloring
         viewer.loadMesh(data.mesh, data.faces);
@@ -192,6 +194,7 @@
         isLoaded = false;
         facesMetadata = [];
         lengthUnit = 'units';
+        lengthScale = 1.0;
 
         // Clear viewer
         viewer.clearMesh();
@@ -296,15 +299,16 @@
                 measurementDisplay.classList.add('has-value');
 
                 if (isFullCylinder) {
-                    const diameter = face.radius * 2;
+                    const diameter = face.radius * 2 * lengthScale;
                     measurementDisplay.innerHTML = `
                         <div class="measurement-label">Diameter (cylinder)</div>
                         <div class="measurement-value">⌀ ${diameter.toFixed(4)} ${lengthUnit}</div>
                         <div class="measurement-note">Face #${selectedIds[0]} · ${arcAngle}° arc</div>`;
                 } else {
+                    const radius = face.radius * lengthScale;
                     measurementDisplay.innerHTML = `
                         <div class="measurement-label">Radius (arc)</div>
-                        <div class="measurement-value">R ${face.radius.toFixed(4)} ${lengthUnit}</div>
+                        <div class="measurement-value">R ${radius.toFixed(4)} ${lengthUnit}</div>
                         <div class="measurement-note">Face #${selectedIds[0]} · ${arcAngle}° arc</div>`;
                 }
                 return;
@@ -383,7 +387,8 @@
         const dx = c2[0] - c1[0];
         const dy = c2[1] - c1[1];
         const dz = c2[2] - c1[2];
-        const distance = Math.abs(n1[0] * dx + n1[1] * dy + n1[2] * dz);
+        const distanceRaw = Math.abs(n1[0] * dx + n1[1] * dy + n1[2] * dz);
+        const distance = distanceRaw * lengthScale;
 
         measurementDisplay.classList.remove('hidden');
         measurementDisplay.classList.add('has-value');
@@ -444,14 +449,18 @@
             }
         }
 
+        // Apply scale to center distance
+        const scaledCenterDistance = centerDistance * lengthScale;
+
         // Show diameter or radius based on arc angle (>=180° = diameter, <180° = radius)
         function cylSizeStr(face) {
             if (!face.radius) return '?';
             const arc = face.arc_angle || 360;
+            const scaledRadius = face.radius * lengthScale;
             if (arc >= 180) {
-                return `⌀${(face.radius * 2).toFixed(4)}`;
+                return `⌀${(scaledRadius * 2).toFixed(4)}`;
             } else {
-                return `R${face.radius.toFixed(4)}`;
+                return `R${scaledRadius.toFixed(4)}`;
             }
         }
         const d1Str = cylSizeStr(face1);
@@ -472,7 +481,7 @@
         } else {
             measurementDisplay.innerHTML = `
                 <div class="measurement-label">Center Distance (cylinders)</div>
-                <div class="measurement-value">${centerDistance.toFixed(4)} ${lengthUnit}</div>
+                <div class="measurement-value">${scaledCenterDistance.toFixed(4)} ${lengthUnit}</div>
                 <div class="measurement-note">
                     Face #${selectedIds[0]} (${d1Str}) ↔ Face #${selectedIds[1]} (${d2Str}) ${lengthUnit}
                 </div>`;
