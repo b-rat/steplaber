@@ -280,17 +280,28 @@
     function updateMeasurement() {
         const selectedIds = Array.from(viewer.selectedFaces);
 
-        // Single face selected - show diameter for cylindrical
+        // Single face selected - show diameter or radius for cylindrical based on arc angle
         if (selectedIds.length === 1) {
             const face = facesMetadata[selectedIds[0]];
             if (face && face.surface_type === 'cylindrical' && face.radius !== null) {
-                const diameter = face.radius * 2;
+                const arcAngle = face.arc_angle || 360;
+                const isFullCylinder = arcAngle >= 150;
+
                 measurementDisplay.classList.remove('hidden');
                 measurementDisplay.classList.add('has-value');
-                measurementDisplay.innerHTML = `
-                    <div class="measurement-label">Diameter (cylinder)</div>
-                    <div class="measurement-value">${diameter.toFixed(4)} ${lengthUnit}</div>
-                    <div class="measurement-note">Face #${selectedIds[0]} · radius: ${face.radius.toFixed(4)} ${lengthUnit}</div>`;
+
+                if (isFullCylinder) {
+                    const diameter = face.radius * 2;
+                    measurementDisplay.innerHTML = `
+                        <div class="measurement-label">Diameter (cylinder)</div>
+                        <div class="measurement-value">⌀ ${diameter.toFixed(4)} ${lengthUnit}</div>
+                        <div class="measurement-note">Face #${selectedIds[0]} · ${arcAngle}° arc</div>`;
+                } else {
+                    measurementDisplay.innerHTML = `
+                        <div class="measurement-label">Radius (arc)</div>
+                        <div class="measurement-value">R ${face.radius.toFixed(4)} ${lengthUnit}</div>
+                        <div class="measurement-note">Face #${selectedIds[0]} · ${arcAngle}° arc</div>`;
+                }
                 return;
             }
             measurementDisplay.classList.add('hidden');
@@ -428,9 +439,18 @@
             }
         }
 
-        // Also show diameters
-        const d1Str = face1.radius ? `⌀${(face1.radius * 2).toFixed(4)}` : '?';
-        const d2Str = face2.radius ? `⌀${(face2.radius * 2).toFixed(4)}` : '?';
+        // Show diameter or radius based on arc angle (>=150° = diameter, <150° = radius)
+        function cylSizeStr(face) {
+            if (!face.radius) return '?';
+            const arc = face.arc_angle || 360;
+            if (arc >= 150) {
+                return `⌀${(face.radius * 2).toFixed(4)}`;
+            } else {
+                return `R${face.radius.toFixed(4)}`;
+            }
+        }
+        const d1Str = cylSizeStr(face1);
+        const d2Str = cylSizeStr(face2);
 
         measurementDisplay.classList.remove('hidden');
         measurementDisplay.classList.add('has-value');

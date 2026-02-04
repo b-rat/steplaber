@@ -3,6 +3,7 @@ STEP file processor using OCC (via CadQuery/OCP).
 Handles reading, tessellating, face metadata extraction, and named STEP export.
 """
 
+import math
 import re
 import json
 import numpy as np
@@ -186,6 +187,7 @@ class StepProcessor:
         radius = None
         axis_direction = None
         axis_point = None
+        arc_angle = None
         if surface_type == "cylindrical":
             cylinder = adaptor.Cylinder()
             radius = round(cylinder.Radius(), 4)
@@ -201,6 +203,10 @@ class StepProcessor:
                 round(axis_loc.Y(), 4),
                 round(axis_loc.Z(), 4),
             ]
+            # Arc angle from U parameter bounds (radians -> degrees)
+            u_min = adaptor.FirstUParameter()
+            u_max = adaptor.LastUParameter()
+            arc_angle = round(math.degrees(u_max - u_min), 1)
 
         return {
             "id": face_id,
@@ -215,6 +221,7 @@ class StepProcessor:
             "radius": radius,
             "axis_direction": axis_direction,
             "axis_point": axis_point,
+            "arc_angle": arc_angle,
             "name": None,
             "feature": None,
         }
