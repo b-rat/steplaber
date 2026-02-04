@@ -38,6 +38,8 @@ The application opens in your browser at `http://localhost:5001`.
 - Or click **Import STEP** in the top bar
 - Or pass a file path as a command-line argument
 
+**Re-importing labeled files:** If you load a STEP file that was previously labeled (or has named faces from another tool), the existing names are automatically imported as features. Features appear in the panel with colors applied, ready for further editing or additional labeling. This enables iterative workflows.
+
 ### Navigating the 3D View
 - **Left-click drag**: Orbit/rotate (trackball-style continuous rotation)
 - **Right-click drag**: Orbit/rotate
@@ -68,6 +70,7 @@ The viewer displays origin axes (X=red, Y=green, Z=blue) and CAD topological edg
 ### Face List Tab
 - Switch to the **Face List** tab to see all faces with metadata
 - Filter by surface type (planar, cylindrical, conical, spherical, toroidal, bspline, bezier, revolution, extrusion, offset)
+- Filter by label status: All faces, Labeled only, or Unlabeled only
 - Filter by area range (min/max)
 - Faces are sorted by area (largest first)
 - Hover over a face in the list to highlight it in the 3D view

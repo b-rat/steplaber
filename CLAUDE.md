@@ -51,7 +51,7 @@ steplabeler/
   - X-ray transparency mode
   - CAD edge wireframe display
   - Origin axes with X/Y/Z labels
-- `static/js/features.js` — Feature manager: creation, storage, auto sub-naming
+- `static/js/features.js` — Feature manager: creation, storage, auto sub-naming, import from STEP names
 - `static/js/app.js` — Application state, API calls, UI event handling
 - `static/css/style.css` — Dark theme UI styling
 
@@ -82,6 +82,19 @@ Faces are named using dot-separated `feature.sub_face` convention:
 ```
 Ungrouped but named faces use just the name: `ADVANCED_FACE('datum_a', ...)`
 Unnamed faces remain as the original value (usually `'NONE'` or `''`).
+
+### Importing Labeled STEP Files
+When loading a STEP file that already has named faces (from a previous labeling session or another tool), the existing names are automatically imported as features:
+
+1. Backend extracts existing names via `_get_step_name()` in `step_processor.py`
+2. Names are passed to frontend in face metadata as `step_name`
+3. `FeatureManager.importFromStepNames()` parses names and creates features:
+   - `feature.sub_name` format → feature with sub_name preserved
+   - `feature_name` format → feature with null sub_name
+4. Feature colors are applied to faces in the 3D viewer
+5. Features appear in the panel as if user-created
+
+This enables iterative workflows: export a partially-labeled STEP, re-import later to continue labeling. Empty names and 'NONE' are filtered out during import.
 
 ## Key Technical Details
 
