@@ -41,8 +41,9 @@
     // Toolbar buttons
     const btnResetView = document.getElementById('btn-reset-view');
     const btnZoomFit = document.getElementById('btn-zoom-fit');
+    const btnClearSelection = document.getElementById('btn-clear-selection');
     const btnXray = document.getElementById('btn-xray');
-        const btnWireframe = document.getElementById('btn-wireframe');
+    const btnWireframe = document.getElementById('btn-wireframe');
     const btnMultiSelect = document.getElementById('btn-multi-select');
 
     // Tabs
@@ -74,6 +75,10 @@
         // Toolbar
         btnResetView.addEventListener('click', () => viewer.resetView());
         btnZoomFit.addEventListener('click', () => viewer._fitCamera());
+        btnClearSelection.addEventListener('click', () => {
+            viewer.clearSelection();
+            updateSelectionInfo();
+        });
         btnXray.addEventListener('click', toggleXray);
         btnWireframe.addEventListener('click', toggleWireframe);
         btnMultiSelect.addEventListener('click', toggleMultiSelect);
