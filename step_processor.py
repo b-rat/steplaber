@@ -54,6 +54,7 @@ class StepProcessor:
         self.step_path = None
         self.step_content = None
         self.advanced_face_lines = []  # (line_number, original_name) tuples
+        self.length_unit = "units"  # Default if not detected
 
     def load_step(self, filepath):
         """Load a STEP file and extract topology."""
@@ -65,6 +66,9 @@ class StepProcessor:
 
         # Parse ADVANCED_FACE entity locations in the STEP text
         self._parse_step_entities()
+
+        # Extract length unit from STEP header
+        self._parse_length_unit()
 
         # Load geometry via CadQuery
         result = cq.importers.importStep(str(filepath))
@@ -87,6 +91,7 @@ class StepProcessor:
         return {
             "num_faces": len(self.faces),
             "num_step_entities": len(self.advanced_face_lines),
+            "length_unit": self.length_unit,
         }
 
     def _parse_step_entities(self):
@@ -106,6 +111,45 @@ class StepProcessor:
                 "start_pos": start_pos,
                 "match_text": match.group(1),
             })
+
+    def _parse_length_unit(self):
+        """Extract length unit from STEP file (SI_UNIT or CONVERSION_BASED_UNIT)."""
+        content = self.step_content.upper()
+
+        # Look for SI_UNIT with length - e.g., SI_UNIT(.MILLI.,.METRE.)
+        si_match = re.search(r"SI_UNIT\s*\(\s*\.(\w+)\.\s*,\s*\.METRE\.\s*\)", content)
+        if si_match:
+            prefix = si_match.group(1)
+            prefix_map = {
+                "MILLI": "mm",
+                "CENTI": "cm",
+                "DECI": "dm",
+                "KILO": "km",
+                "$": "m",  # No prefix
+            }
+            self.length_unit = prefix_map.get(prefix, "m")
+            return
+
+        # Check for bare SI_UNIT($,.METRE.) - meters with no prefix
+        if re.search(r"SI_UNIT\s*\(\s*\$\s*,\s*\.METRE\.\s*\)", content):
+            self.length_unit = "m"
+            return
+
+        # Look for CONVERSION_BASED_UNIT - e.g., CONVERSION_BASED_UNIT('INCH',...)
+        conv_match = re.search(r"CONVERSION_BASED_UNIT\s*\(\s*'(\w+)'", content)
+        if conv_match:
+            unit_name = conv_match.group(1)
+            unit_map = {
+                "INCH": "in",
+                "FOOT": "ft",
+                "YARD": "yd",
+                "MILE": "mi",
+            }
+            self.length_unit = unit_map.get(unit_name, unit_name.lower())
+            return
+
+        # Default fallback
+        self.length_unit = "units"
 
     def _extract_face_metadata(self, face, face_id):
         """Extract geometric metadata from a TopoDS_Face."""

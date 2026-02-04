@@ -12,6 +12,7 @@
     let facesMetadata = [];
     let isLoaded = false;
     let multiSelectMode = false;
+    let lengthUnit = 'units';
 
     // --- DOM refs ---
     const canvas = document.getElementById('viewer-canvas');
@@ -166,6 +167,7 @@
         isLoaded = true;
         filenameEl.textContent = data.filename;
         facesMetadata = data.faces;
+        lengthUnit = data.info?.length_unit || 'units';
 
         // Load mesh into viewer with face metadata for coloring
         viewer.loadMesh(data.mesh, data.faces);
@@ -184,6 +186,7 @@
     function clearFile() {
         isLoaded = false;
         facesMetadata = [];
+        lengthUnit = 'units';
 
         // Clear viewer
         viewer.clearMesh();
@@ -286,8 +289,8 @@
                 measurementDisplay.classList.add('has-value');
                 measurementDisplay.innerHTML = `
                     <div class="measurement-label">Diameter (cylinder)</div>
-                    <div class="measurement-value">${diameter.toFixed(4)}</div>
-                    <div class="measurement-note">Face #${selectedIds[0]} · radius: ${face.radius.toFixed(4)}</div>`;
+                    <div class="measurement-value">${diameter.toFixed(4)} ${lengthUnit}</div>
+                    <div class="measurement-note">Face #${selectedIds[0]} · radius: ${face.radius.toFixed(4)} ${lengthUnit}</div>`;
                 return;
             }
             measurementDisplay.classList.add('hidden');
@@ -370,7 +373,7 @@
         measurementDisplay.classList.add('has-value');
         measurementDisplay.innerHTML = `
             <div class="measurement-label">Distance (parallel faces)</div>
-            <div class="measurement-value">${distance.toFixed(4)}</div>
+            <div class="measurement-value">${distance.toFixed(4)} ${lengthUnit}</div>
             <div class="measurement-note">Face #${selectedIds[0]} ↔ Face #${selectedIds[1]}</div>`;
     }
 
@@ -433,9 +436,9 @@
         measurementDisplay.classList.add('has-value');
         measurementDisplay.innerHTML = `
             <div class="measurement-label">Center Distance (cylinders)</div>
-            <div class="measurement-value">${centerDistance.toFixed(4)}</div>
+            <div class="measurement-value">${centerDistance.toFixed(4)} ${lengthUnit}</div>
             <div class="measurement-note">
-                Face #${selectedIds[0]} (${d1Str}) ↔ Face #${selectedIds[1]} (${d2Str})
+                Face #${selectedIds[0]} (${d1Str}) ↔ Face #${selectedIds[1]} (${d2Str}) ${lengthUnit}
                 ${!isParallel ? '<br>Axes are not parallel' : ''}
             </div>`;
     }
