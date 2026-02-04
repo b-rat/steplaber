@@ -365,12 +365,12 @@
 
         if (!isParallel) {
             const angleDeg = Math.acos(Math.min(1, Math.abs(dot))) * (180 / Math.PI);
-            measurementDisplay.classList.remove('hidden', 'has-value');
+            measurementDisplay.classList.remove('hidden');
+            measurementDisplay.classList.add('has-value');
             measurementDisplay.innerHTML = `
-                <div class="measurement-note">
-                    Faces are not parallel (${angleDeg.toFixed(1)}° angle).
-                    Select two parallel planar faces to measure distance.
-                </div>`;
+                <div class="measurement-label">Angle (faces)</div>
+                <div class="measurement-value">${angleDeg.toFixed(2)}°</div>
+                <div class="measurement-note">Face #${selectedIds[0]} ↔ Face #${selectedIds[1]}</div>`;
             return;
         }
 
@@ -454,13 +454,24 @@
 
         measurementDisplay.classList.remove('hidden');
         measurementDisplay.classList.add('has-value');
-        measurementDisplay.innerHTML = `
-            <div class="measurement-label">Center Distance (cylinders)</div>
-            <div class="measurement-value">${centerDistance.toFixed(4)} ${lengthUnit}</div>
-            <div class="measurement-note">
-                Face #${selectedIds[0]} (${d1Str}) ↔ Face #${selectedIds[1]} (${d2Str}) ${lengthUnit}
-                ${!isParallel ? '<br>Axes are not parallel' : ''}
-            </div>`;
+
+        if (!isParallel) {
+            // Show angle between axes for non-parallel cylinders
+            const angleDeg = Math.acos(Math.min(1, Math.abs(dot))) * (180 / Math.PI);
+            measurementDisplay.innerHTML = `
+                <div class="measurement-label">Angle (cylinder axes)</div>
+                <div class="measurement-value">${angleDeg.toFixed(2)}°</div>
+                <div class="measurement-note">
+                    Face #${selectedIds[0]} (${d1Str}) ↔ Face #${selectedIds[1]} (${d2Str}) ${lengthUnit}
+                </div>`;
+        } else {
+            measurementDisplay.innerHTML = `
+                <div class="measurement-label">Center Distance (cylinders)</div>
+                <div class="measurement-value">${centerDistance.toFixed(4)} ${lengthUnit}</div>
+                <div class="measurement-note">
+                    Face #${selectedIds[0]} (${d1Str}) ↔ Face #${selectedIds[1]} (${d2Str}) ${lengthUnit}
+                </div>`;
+        }
     }
 
     // --- Feature Creation ---
