@@ -102,6 +102,29 @@ Each face carries metadata extracted from OCC:
 - `normal`: [x, y, z] average normal (for planar faces, exact normal)
 - `bounds`: bounding box [min_x, min_y, min_z, max_x, max_y, max_z]
 
+For cylindrical faces, additional properties are extracted:
+- `radius`: cylinder radius
+- `axis_direction`: [x, y, z] unit vector along cylinder axis
+- `axis_point`: [x, y, z] point on the cylinder axis
+- `arc_angle`: angular extent in degrees (360 for full cylinder, less for partial arcs)
+
+### Measurement Tool
+The UI includes a measurement tool that automatically displays measurements when faces are selected:
+
+**Single face selected:**
+- Cylindrical face: Shows diameter (⌀) for arcs ≥180°, radius (R) for arcs <180°
+- Displays arc angle in the note
+
+**Two faces selected:**
+- Two parallel planar faces: Distance between planes
+- Two non-parallel planar faces: Angle between faces
+- Two parallel cylindrical faces: Center-to-center distance (perpendicular distance between axes)
+- Two non-parallel cylindrical faces: Angle between axes
+
+Units are automatically extracted from the STEP file (mm, in, m, etc.) and displayed with measurements. Falls back to "units" if not detected.
+
+The measurement logic is in `app.js` functions: `updateMeasurement()`, `measurePlanarDistance()`, `measureCylinderDistance()`.
+
 ### Camera Controls
 The viewer uses trackball-style rotation implemented with quaternions. This allows continuous orbiting around any axis without gimbal lock. Camera state is stored as:
 - `rotationQuaternion`: Current camera orientation

@@ -73,6 +73,24 @@ The viewer displays origin axes (X=red, Y=green, Z=blue) and CAD topological edg
 - Hover over a face in the list to highlight it in the 3D view
 - Click a face in the list to select it
 
+### Measurement Tool
+Measurements are displayed automatically in the Selection panel when faces are selected:
+
+**Single cylindrical face:**
+- Shows **diameter** (⌀) for full cylinders (≥180° arc)
+- Shows **radius** (R) for partial arcs (<180°)
+- Displays the arc angle
+
+**Two faces selected:**
+| Selection | Measurement |
+|-----------|-------------|
+| Two parallel planar faces | Distance between planes |
+| Two non-parallel planar faces | Angle between faces |
+| Two parallel cylindrical faces | Center-to-center distance |
+| Two non-parallel cylindrical faces | Angle between axes |
+
+Units are automatically detected from the STEP file (mm, in, m, etc.) and displayed with all measurements.
+
 ### Exporting
 - Click **Export Named STEP** to download the STEP file with embedded face names
 - Names follow the convention: `feature_name.sub_face` (e.g., `mounting_boss.cylindrical`)
