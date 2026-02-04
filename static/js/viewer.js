@@ -22,12 +22,16 @@ class StepViewer {
         this.wireframeVisible = true;
         this.facesMetadata = [];
 
-        // Orbit state
+        // Orbit state - trackball style
         this.isOrbiting = false;
         this.isPanning = false;
         this.lastMouse = { x: 0, y: 0 };
-        this.spherical = { theta: Math.PI / 4, phi: Math.PI / 3, radius: 50 };
+        this.cameraDistance = 50;
         this.target = new THREE.Vector3(0, 0, 0);
+        // Initial isometric-like view
+        this.rotationQuaternion = new THREE.Quaternion().setFromEuler(
+            new THREE.Euler(-Math.PI / 6, Math.PI / 4, 0, 'YXZ')
+        );
 
         // Callbacks
         this.onFaceClicked = null;
@@ -220,17 +224,17 @@ class StepViewer {
         const maxDim = Math.max(size.x, size.y, size.z);
 
         this.target.copy(center);
-        this.spherical.radius = maxDim * 2;
+        this.cameraDistance = maxDim * 2;
         this._updateCamera();
     }
 
     _updateCamera() {
-        const { theta, phi, radius } = this.spherical;
-        this.camera.position.set(
-            this.target.x + radius * Math.sin(phi) * Math.cos(theta),
-            this.target.y + radius * Math.cos(phi),
-            this.target.z + radius * Math.sin(phi) * Math.sin(theta)
-        );
+        // Trackball-style: apply quaternion rotation to a base camera direction
+        const baseDirection = new THREE.Vector3(0, 0, 1);
+        baseDirection.applyQuaternion(this.rotationQuaternion);
+
+        this.camera.position.copy(this.target).addScaledVector(baseDirection, this.cameraDistance);
+        this.camera.up.set(0, 1, 0).applyQuaternion(this.rotationQuaternion);
         this.camera.lookAt(this.target);
     }
 
@@ -380,12 +384,28 @@ class StepViewer {
 
         if (this.isOrbiting && (Math.abs(dx) > 1 || Math.abs(dy) > 1)) {
             this._didDrag = true;
-            this.spherical.theta += dx * 0.01;
-            this.spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.spherical.phi - dy * 0.01));
+
+            // Trackball rotation: rotate around camera's right and up axes
+            const rotSpeed = 0.005;
+
+            // Get camera axes
+            const right = new THREE.Vector3();
+            const up = new THREE.Vector3();
+            right.setFromMatrixColumn(this.camera.matrixWorld, 0);
+            up.setFromMatrixColumn(this.camera.matrixWorld, 1);
+
+            // Create rotation quaternions
+            const qx = new THREE.Quaternion().setFromAxisAngle(up, -dx * rotSpeed);
+            const qy = new THREE.Quaternion().setFromAxisAngle(right, -dy * rotSpeed);
+
+            // Apply rotations
+            this.rotationQuaternion.premultiply(qx).premultiply(qy);
+            this.rotationQuaternion.normalize();
+
             this._updateCamera();
         } else if (this.isPanning) {
             this._didDrag = true;
-            const panSpeed = this.spherical.radius * 0.001;
+            const panSpeed = this.cameraDistance * 0.001;
             const right = new THREE.Vector3();
             const up = new THREE.Vector3();
             right.setFromMatrixColumn(this.camera.matrixWorld, 0);
@@ -431,7 +451,7 @@ class StepViewer {
     _onWheel(event) {
         event.preventDefault();
         const factor = event.deltaY > 0 ? 1.1 : 0.9;
-        this.spherical.radius = Math.max(0.5, this.spherical.radius * factor);
+        this.cameraDistance = Math.max(0.5, this.cameraDistance * factor);
         this._updateCamera();
     }
 
@@ -450,8 +470,8 @@ class StepViewer {
     }
 
     resetView() {
-        this.spherical.theta = Math.PI / 4;
-        this.spherical.phi = Math.PI / 3;
+        // Reset to an isometric-like view
+        this.rotationQuaternion.setFromEuler(new THREE.Euler(-Math.PI / 6, Math.PI / 4, 0, 'YXZ'));
         this._fitCamera();
     }
 
