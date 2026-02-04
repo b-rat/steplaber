@@ -135,9 +135,12 @@ This is due to the combination of:
 3. The direct index-based face→entity mapping
 
 ### Workarounds for Instanced Assemblies
-- **Select from last instance:** If consistent, select faces only from the most recently added instance
+- **Select faces on ALL instances (recommended):** Select the same face on every instance (e.g., select both pin tops). The export gracefully handles this—faces with valid entity indices get labeled, faces with out-of-range indices are silently skipped. At least one face will map correctly to the prototype's `ADVANCED_FACE` entity, which is what all instances reference.
 - **Export parts separately:** Export individual parts from CAD, label them separately, then reassemble
 - **Accept partial labeling:** Label what works; unlabeled faces retain their original names
+
+### Graceful Failure for Unmapped Faces
+The export code checks `if face_id < len(self.advanced_face_lines)` before attempting to label. Faces with IDs beyond the STEP entity count are silently skipped—no errors, no file corruption. This makes it safe to select faces across all instances without worrying about which one maps correctly.
 
 ### Why Automatic Instance Detection Failed
 We attempted automatic instance grouping using:
