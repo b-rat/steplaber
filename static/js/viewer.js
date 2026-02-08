@@ -80,9 +80,10 @@ class StepViewer {
         dir2.position.set(-5, -3, -5);
         this.scene.add(dir2);
 
-        // Grid
-        const grid = new THREE.GridHelper(100, 20, 0x2a2a30, 0x1e1e24);
-        this.scene.add(grid);
+        // Grid (default XZ plane)
+        this.gridPlane = 'XZ';
+        this.grid = this._createGrid('XZ');
+        this.scene.add(this.grid);
 
         // Origin axes helper (R=X, G=Y, B=Z)
         const axisLength = 20;
@@ -526,6 +527,41 @@ class StepViewer {
     _animate() {
         requestAnimationFrame(() => this._animate());
         this.renderer.render(this.scene, this.camera);
+    }
+
+    _createGrid(plane) {
+        const grid = new THREE.GridHelper(100, 20, 0x2a2a30, 0x1e1e24);
+        if (plane === 'XY') {
+            grid.rotation.x = Math.PI / 2;
+        } else if (plane === 'YZ') {
+            grid.rotation.z = Math.PI / 2;
+        }
+        // XZ is the default orientation, no rotation needed
+        return grid;
+    }
+
+    setGridPlane(plane) {
+        // Remove existing grid
+        if (this.grid) {
+            this.scene.remove(this.grid);
+            this.grid = null;
+        }
+
+        if (plane && plane === this.gridPlane) {
+            // Same plane clicked again — toggle off
+            this.gridPlane = null;
+            return null;
+        }
+
+        if (plane) {
+            this.gridPlane = plane;
+            this.grid = this._createGrid(plane);
+            this.scene.add(this.grid);
+        } else {
+            this.gridPlane = null;
+        }
+
+        return this.gridPlane;
     }
 
     resetView() {

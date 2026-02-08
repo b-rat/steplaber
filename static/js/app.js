@@ -47,6 +47,9 @@
     const btnXray = document.getElementById('btn-xray');
     const btnWireframe = document.getElementById('btn-wireframe');
     const btnMultiSelect = document.getElementById('btn-multi-select');
+    const btnGridXZ = document.getElementById('btn-grid-xz');
+    const btnGridXY = document.getElementById('btn-grid-xy');
+    const btnGridYZ = document.getElementById('btn-grid-yz');
 
     // Tabs
     const tabs = document.querySelectorAll('.tab');
@@ -84,6 +87,9 @@
         btnXray.addEventListener('click', toggleXray);
         btnWireframe.addEventListener('click', toggleWireframe);
         btnMultiSelect.addEventListener('click', toggleMultiSelect);
+        btnGridXZ.addEventListener('click', () => setGridPlane('XZ'));
+        btnGridXY.addEventListener('click', () => setGridPlane('XY'));
+        btnGridYZ.addEventListener('click', () => setGridPlane('YZ'));
 
         // Create feature button
         btnCreateFeature.addEventListener('click', showNameDialog);
@@ -671,6 +677,13 @@
     function toggleMultiSelect() {
         multiSelectMode = !multiSelectMode;
         btnMultiSelect.classList.toggle('active', multiSelectMode);
+    }
+
+    function setGridPlane(plane) {
+        const activePlane = viewer.setGridPlane(plane);
+        btnGridXZ.classList.toggle('active', activePlane === 'XZ');
+        btnGridXY.classList.toggle('active', activePlane === 'XY');
+        btnGridYZ.classList.toggle('active', activePlane === 'YZ');
     }
 
     // --- Export ---

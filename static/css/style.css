@@ -168,6 +168,12 @@ body {
     border-color: var(--accent-dim);
 }
 
+.btn-icon.btn-grid {
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+}
+
 /* Main Layout */
 #main {
     display: flex;
