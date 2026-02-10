@@ -63,6 +63,12 @@ class StepViewer {
         });
         this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.localClippingEnabled = true;
+
+        // Clipping plane state
+        this.clippingPlane = null;
+        this.clipPlaneAxis = null;
+        this.clipFlipped = false;
 
         // Lights - high ambient for visibility of all surfaces
         const ambient = new THREE.AmbientLight(0xffffff, 0.7);
@@ -201,6 +207,7 @@ class StepViewer {
         this.hiddenFaces.clear();
         this.featureColors = {};
         this.xrayMode = false;
+        this.clearClipping();
     }
 
     clearMesh() {
@@ -225,6 +232,7 @@ class StepViewer {
         this.hiddenFaces.clear();
         this.featureColors = {};
         this.hoveredFace = -1;
+        this.clearClipping();
     }
 
     _resetColors(colorArray, indices, faceIds) {
@@ -431,8 +439,12 @@ class StepViewer {
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const intersects = this.raycaster.intersectObject(this.mesh, false);
 
-        if (intersects.length > 0) {
-            const triIndex = intersects[0].faceIndex;
+        for (const hit of intersects) {
+            // Skip intersections on the clipped-away side of the plane
+            if (this.clippingPlane && this.clippingPlane.distanceToPoint(hit.point) < 0) {
+                continue;
+            }
+            const triIndex = hit.faceIndex;
             if (triIndex !== undefined && triIndex < this.faceIds.length) {
                 const faceId = this.faceIds[triIndex];
                 if (!this.hiddenFaces.has(faceId)) {
@@ -585,6 +597,85 @@ class StepViewer {
         }
 
         return this.gridPlane;
+    }
+
+    // --- Clipping Plane ---
+
+    setClippingPlane(plane) {
+        // Toggle off if same plane clicked again
+        if (plane === this.clipPlaneAxis) {
+            this.clearClipping();
+            return null;
+        }
+
+        this.clipPlaneAxis = plane;
+        this.clipFlipped = false;
+
+        // Create plane with appropriate normal
+        let normal;
+        if (plane === 'XY') normal = new THREE.Vector3(0, 0, -1);
+        else if (plane === 'YZ') normal = new THREE.Vector3(-1, 0, 0);
+        else if (plane === 'XZ') normal = new THREE.Vector3(0, -1, 0);
+
+        this.clippingPlane = new THREE.Plane(normal, 0);
+
+        // Apply to materials
+        this._applyClippingPlane();
+
+        // Compute bounds for slider
+        if (!this.mesh) return { axis: plane, min: -50, max: 50, center: 0 };
+
+        const box = new THREE.Box3().setFromObject(this.mesh);
+        let min, max;
+        if (plane === 'XY') { min = box.min.z; max = box.max.z; }
+        else if (plane === 'YZ') { min = box.min.x; max = box.max.x; }
+        else if (plane === 'XZ') { min = box.min.y; max = box.max.y; }
+
+        const center = (min + max) / 2;
+        // Position plane at center
+        this.clippingPlane.constant = center;
+
+        return { axis: plane, min, max, center };
+    }
+
+    setClippingOffset(value) {
+        if (!this.clippingPlane) return;
+        this.clippingPlane.constant = this.clipFlipped ? -value : value;
+    }
+
+    flipClipping() {
+        if (!this.clippingPlane) return;
+        this.clippingPlane.normal.negate();
+        this.clippingPlane.constant = -this.clippingPlane.constant;
+        this.clipFlipped = !this.clipFlipped;
+    }
+
+    clearClipping() {
+        this.clippingPlane = null;
+        this.clipPlaneAxis = null;
+        this.clipFlipped = false;
+
+        // Remove clipping from materials
+        if (this.mesh) {
+            this.mesh.material.clippingPlanes = [];
+            this.mesh.material.needsUpdate = true;
+        }
+        if (this.wireframe) {
+            this.wireframe.material.clippingPlanes = [];
+            this.wireframe.material.needsUpdate = true;
+        }
+    }
+
+    _applyClippingPlane() {
+        const planes = this.clippingPlane ? [this.clippingPlane] : [];
+        if (this.mesh) {
+            this.mesh.material.clippingPlanes = planes;
+            this.mesh.material.needsUpdate = true;
+        }
+        if (this.wireframe) {
+            this.wireframe.material.clippingPlanes = planes;
+            this.wireframe.material.needsUpdate = true;
+        }
     }
 
     resetView() {

@@ -51,6 +51,12 @@
     const btnGridXZ = document.getElementById('btn-grid-xz');
     const btnGridXY = document.getElementById('btn-grid-xy');
     const btnGridYZ = document.getElementById('btn-grid-yz');
+    const btnClipXY = document.getElementById('btn-clip-xy');
+    const btnClipYZ = document.getElementById('btn-clip-yz');
+    const btnClipXZ = document.getElementById('btn-clip-xz');
+    const btnClipFlip = document.getElementById('btn-clip-flip');
+    const clipSliderContainer = document.getElementById('clip-slider-container');
+    const clipSlider = document.getElementById('clip-slider');
 
     // Tabs
     const tabs = document.querySelectorAll('.tab');
@@ -92,6 +98,13 @@
         btnGridXZ.addEventListener('click', () => setGridPlane('XZ'));
         btnGridXY.addEventListener('click', () => setGridPlane('XY'));
         btnGridYZ.addEventListener('click', () => setGridPlane('YZ'));
+        btnClipXY.addEventListener('click', () => setClipPlane('XY'));
+        btnClipYZ.addEventListener('click', () => setClipPlane('YZ'));
+        btnClipXZ.addEventListener('click', () => setClipPlane('XZ'));
+        btnClipFlip.addEventListener('click', onClipFlip);
+        clipSlider.addEventListener('input', () => {
+            viewer.setClippingOffset(parseFloat(clipSlider.value));
+        });
 
         // Create feature button
         btnCreateFeature.addEventListener('click', showNameDialog);
@@ -186,6 +199,12 @@
         lengthUnit = data.info?.length_unit || 'units';
         lengthScale = data.info?.length_scale || 1.0;
 
+        // Reset clipping UI
+        clipSliderContainer.classList.add('hidden');
+        btnClipXY.classList.remove('active');
+        btnClipYZ.classList.remove('active');
+        btnClipXZ.classList.remove('active');
+
         // Load mesh into viewer with face metadata for coloring
         viewer.loadMesh(data.mesh, data.faces);
 
@@ -215,6 +234,12 @@
         facesMetadata = [];
         lengthUnit = 'units';
         lengthScale = 1.0;
+
+        // Clear clipping UI
+        clipSliderContainer.classList.add('hidden');
+        btnClipXY.classList.remove('active');
+        btnClipYZ.classList.remove('active');
+        btnClipXZ.classList.remove('active');
 
         // Clear viewer
         viewer.clearMesh();
@@ -692,6 +717,33 @@
         btnGridXZ.classList.toggle('active', activePlane === 'XZ');
         btnGridXY.classList.toggle('active', activePlane === 'XY');
         btnGridYZ.classList.toggle('active', activePlane === 'YZ');
+    }
+
+    function setClipPlane(plane) {
+        const result = viewer.setClippingPlane(plane);
+
+        btnClipXY.classList.toggle('active', result && result.axis === 'XY');
+        btnClipYZ.classList.toggle('active', result && result.axis === 'YZ');
+        btnClipXZ.classList.toggle('active', result && result.axis === 'XZ');
+
+        if (result) {
+            clipSlider.min = result.min;
+            clipSlider.max = result.max;
+            clipSlider.step = (result.max - result.min) / 500;
+            clipSlider.value = result.center;
+            clipSliderContainer.classList.remove('hidden');
+        } else {
+            clipSliderContainer.classList.add('hidden');
+        }
+    }
+
+    function onClipFlip() {
+        if (!viewer.clipPlaneAxis) return;
+        viewer.flipClipping();
+        // Update slider value to match the new constant
+        const currentValue = parseFloat(clipSlider.value);
+        // After flip, the effective offset sign changes, so we keep the slider position
+        // but the viewer internally handles the negation
     }
 
     // --- Export ---
