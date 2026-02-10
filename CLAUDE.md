@@ -46,10 +46,11 @@ steplabeler/
 - `templates/index.html` — Main page template with two-panel layout
 - `static/js/viewer.js` — Three.js 3D viewer with:
   - Trackball-style orbit controls (continuous rotation around any axis)
-  - Face picking via raycasting
+  - Face picking via raycasting (clipping-plane-aware)
   - Face highlighting (selection, hover, feature colors)
   - X-ray transparency mode
   - CAD edge wireframe display
+  - Cross-section clipping planes (XY, YZ, XZ) with slider and flip
   - Origin axes with X/Y/Z labels
 - `static/js/features.js` — Feature manager: creation, storage, auto sub-naming, import from STEP names
 - `static/js/app.js` — Application state, API calls, UI event handling
@@ -137,6 +138,30 @@ The UI includes a measurement tool that automatically displays measurements when
 Units are automatically extracted from the STEP file (mm, in, m, etc.) and displayed with measurements. Falls back to "units" if not detected.
 
 The measurement logic is in `app.js` functions: `updateMeasurement()`, `measurePlanarDistance()`, `measureCylinderDistance()`.
+
+### Cross-Section Clipping Tool
+The toolbar includes a cross-section tool for slicing the model along XY, YZ, or XZ planes to reveal and select hidden/internal faces.
+
+**Components:**
+- 3 clip plane buttons (XY, YZ, XZ) — styled in orange/warning color to distinguish from the grid plane buttons
+- Flip button (⇄) — reverses which side of the cut is visible
+- Slider — positioned at bottom of viewer panel, controls the clip plane position along its normal axis
+
+**Implementation in `viewer.js`:**
+- `setClippingPlane(plane)` — Creates a `THREE.Plane` with the appropriate normal, applies `material.clippingPlanes` on mesh and wireframe materials, computes model bounding box for slider range. Toggles off if same plane clicked again.
+- `setClippingOffset(value)` — Sets `clippingPlane.constant` (handles flip direction)
+- `flipClipping()` — Negates the plane normal and constant
+- `clearClipping()` — Removes clipping from all materials, resets state
+- `_applyClippingPlane()` — Helper to set `material.clippingPlanes` on both mesh and wireframe materials
+- Requires `renderer.localClippingEnabled = true` (set in `_init()`)
+
+**Raycaster clipping awareness:**
+The `_getFaceAtMouse()` method iterates all ray hits and skips intersections on the clipped-away side using `clippingPlane.distanceToPoint(hit.point) < 0`. This allows selecting faces that are only visible because of the clipping plane cut.
+
+**Wiring in `app.js`:**
+- `setClipPlane(plane)` — Calls viewer, updates button active states (orange highlight), configures slider min/max/step/value from model bounds, shows/hides slider container
+- `onClipFlip()` — Calls `viewer.flipClipping()`
+- Clipping UI resets on file load and file clear
 
 ### Camera Controls
 The viewer uses trackball-style rotation implemented with quaternions. This allows continuous orbiting around any axis without gimbal lock. Camera state is stored as:

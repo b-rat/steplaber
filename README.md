@@ -66,6 +66,16 @@ The viewer displays origin axes (X=red, Y=green, Z=blue) and CAD topological edg
 - **Fit all** (⊞): Zoom to fit the entire model
 - **X-ray mode** (◇): Toggle transparency to see through the model
 - **Wireframe** (△): Toggle CAD edge display
+- **Feature colors** (▨): Toggle feature color display
+
+### Cross-Section Tool
+Clip the model along a plane to reveal and select hidden or internal faces:
+
+- Click one of the orange **XY**, **YZ**, or **XZ** clip buttons in the toolbar
+- Use the **slider** at the bottom of the viewer to move the clipping plane through the model
+- Click the **flip button** (⇄) to view the opposite side of the cut
+- Click the same clip button again to disable clipping
+- Faces revealed by clipping can be hovered and selected normally
 
 ### Face List Tab
 - Switch to the **Face List** tab to see all faces with metadata
