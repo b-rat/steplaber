@@ -329,6 +329,7 @@
      * - 1 cylindrical face: show diameter
      * - 2 cylindrical faces: show center-to-center distance
      * - 2 parallel planar faces: show distance between planes
+     * - 1 cylindrical + 1 planar: show centerline-to-plane distance
      */
     function updateMeasurement() {
         const selectedIds = Array.from(viewer.selectedFaces);
@@ -387,6 +388,17 @@
         // Two planar faces - show distance if parallel
         if (face1.surface_type === 'planar' && face2.surface_type === 'planar') {
             measurePlanarDistance(face1, face2, selectedIds);
+            return;
+        }
+
+        // One cylindrical + one planar: distance from axis to plane
+        if ((face1.surface_type === 'cylindrical' && face2.surface_type === 'planar') ||
+            (face1.surface_type === 'planar' && face2.surface_type === 'cylindrical')) {
+            measureCylinderToPlane(
+                face1.surface_type === 'cylindrical' ? face1 : face2,
+                face1.surface_type === 'planar' ? face1 : face2,
+                selectedIds
+            );
             return;
         }
 
@@ -531,6 +543,63 @@
                     Face #${selectedIds[0]} (${d1Str}) ↔ Face #${selectedIds[1]} (${d2Str}) ${lengthUnit}
                 </div>`;
         }
+    }
+
+    /**
+     * Measure distance from a cylinder's centerline to a planar face.
+     * Only meaningful when the axis is parallel to the plane.
+     */
+    function measureCylinderToPlane(cylFace, planeFace, selectedIds) {
+        const axisPoint = cylFace.axis_point;
+        const axisDir = cylFace.axis_direction;
+        const planeNormal = planeFace.normal;
+        const planeCentroid = planeFace.centroid;
+
+        if (!axisPoint || !axisDir || !planeNormal || !planeCentroid) {
+            measurementDisplay.classList.add('hidden');
+            return;
+        }
+
+        // Check if axis is parallel to the plane: axis_dir · plane_normal ≈ 0
+        const dot = axisDir[0] * planeNormal[0] + axisDir[1] * planeNormal[1] + axisDir[2] * planeNormal[2];
+        const isParallel = Math.abs(dot) < 0.01;
+
+        if (!isParallel) {
+            const angleDeg = 90 - Math.acos(Math.min(1, Math.abs(dot))) * (180 / Math.PI);
+            measurementDisplay.classList.remove('hidden');
+            measurementDisplay.classList.add('has-value');
+            measurementDisplay.innerHTML = `
+                <div class="measurement-label">Axis-to-plane angle</div>
+                <div class="measurement-value">${angleDeg.toFixed(2)}°</div>
+                <div class="measurement-note">Axis is not parallel to plane</div>`;
+            return;
+        }
+
+        // Distance from axis_point to the plane: |plane_normal · (axis_point - plane_centroid)|
+        const dx = axisPoint[0] - planeCentroid[0];
+        const dy = axisPoint[1] - planeCentroid[1];
+        const dz = axisPoint[2] - planeCentroid[2];
+        const distanceRaw = Math.abs(planeNormal[0] * dx + planeNormal[1] * dy + planeNormal[2] * dz);
+        const distance = distanceRaw * lengthScale;
+
+        // Cylinder size label
+        const arc = cylFace.arc_angle || 360;
+        const scaledRadius = cylFace.radius * lengthScale;
+        const cylStr = arc >= 180
+            ? `⌀${(scaledRadius * 2).toFixed(4)}`
+            : `R${scaledRadius.toFixed(4)}`;
+
+        const cylId = cylFace === facesMetadata[selectedIds[0]] ? selectedIds[0] : selectedIds[1];
+        const planeId = cylId === selectedIds[0] ? selectedIds[1] : selectedIds[0];
+
+        measurementDisplay.classList.remove('hidden');
+        measurementDisplay.classList.add('has-value');
+        measurementDisplay.innerHTML = `
+            <div class="measurement-label">Centerline to Plane</div>
+            <div class="measurement-value">${distance.toFixed(4)} ${lengthUnit}</div>
+            <div class="measurement-note">
+                Face #${cylId} (${cylStr}) ↔ Face #${planeId} (planar) ${lengthUnit}
+            </div>`;
     }
 
     // --- Feature Creation ---

@@ -101,6 +101,8 @@ Measurements are displayed automatically in the Selection panel when faces are s
 | Two non-parallel planar faces | Angle between faces |
 | Two parallel cylindrical faces | Center-to-center distance |
 | Two non-parallel cylindrical faces | Angle between axes |
+| Cylindrical + parallel planar face | Centerline-to-plane distance |
+| Cylindrical + non-parallel planar face | Axis-to-plane angle |
 
 Units are automatically detected from the STEP file (mm, in, m, etc.) and displayed with all measurements.
 

@@ -134,10 +134,12 @@ The UI includes a measurement tool that automatically displays measurements when
 - Two non-parallel planar faces: Angle between faces
 - Two parallel cylindrical faces: Center-to-center distance (perpendicular distance between axes)
 - Two non-parallel cylindrical faces: Angle between axes
+- One cylindrical + one planar (axis parallel to plane): Centerline-to-plane distance
+- One cylindrical + one planar (axis not parallel): Angle between axis and plane
 
 Units are automatically extracted from the STEP file (mm, in, m, etc.) and displayed with measurements. Falls back to "units" if not detected.
 
-The measurement logic is in `app.js` functions: `updateMeasurement()`, `measurePlanarDistance()`, `measureCylinderDistance()`.
+The measurement logic is in `app.js` functions: `updateMeasurement()`, `measurePlanarDistance()`, `measureCylinderDistance()`, `measureCylinderToPlane()`.
 
 ### Cross-Section Clipping Tool
 The toolbar includes a cross-section tool for slicing the model along XY, YZ, or XZ planes to reveal and select hidden/internal faces.
