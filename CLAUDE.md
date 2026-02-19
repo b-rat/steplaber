@@ -164,6 +164,7 @@ The `_getFaceAtMouse()` method iterates all ray hits and skips intersections on 
 - `setClipPlane(plane)` — Calls viewer, updates button active states (orange highlight), configures slider min/max/step/value from model bounds, shows/hides slider container
 - `onClipFlip()` — Calls `viewer.flipClipping()`
 - Clipping UI resets on file load and file clear
+- Feature colors (`colorsVisible`) and the color toggle button are reset to enabled on every model load, preventing stale state when replacing a model with colors toggled off
 
 ### Camera Controls
 The viewer uses trackball-style rotation implemented with quaternions. This allows continuous orbiting around any axis without gimbal lock. Camera state is stored as:
